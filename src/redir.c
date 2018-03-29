@@ -2494,12 +2494,21 @@ static int redir_getreq(struct redir_t *redir, struct redir_socket_t *sock,
 
     default:
       {
+	int url_maxlen = 8192; 
+	int bufferlen = sizeof( httpreq->qs );
+	int hostlen = sizeof(httpreq->host);
+	int pathlen = sizeof(httpreq->path);
+	int assume_len = url_maxlen - 8 - hostlen - pathlen;
+	if( assume_len > url_maxlen ){ bufferlen = url_maxlen; }
+	else { bufferlen = assume_len; }
+	char buffer[bufferlen];
+	strlcpy( buffer, httpreq->qs,  bufferlen );
         snprintf(conn->s_state.redir.userurl,
 		      sizeof(conn->s_state.redir.userurl),
 		      "http://%s/%s%s%s",
 		      httpreq->host, httpreq->path,
 		      httpreq->qs[0] ? "?" : "",
-		      httpreq->qs[0] ? httpreq->qs : "");
+		      httpreq->qs[0] ? buffer : "");
 
         if (_options.debug)
           syslog(LOG_DEBUG, "%s(%d): -->> Setting userurl=[%s]", __FUNCTION__, __LINE__, conn->s_state.redir.userurl);
